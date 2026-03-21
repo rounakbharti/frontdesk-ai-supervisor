@@ -64,6 +64,41 @@ app.get('/api/requests', async (req, res) => {
     }
 });
 
+app.post('/api/supervisor/answer', async (req, res) => {
+    try {
+        const { help_request_id, question, answer } = req.body;
+        
+        // Update Help Request Status synchronously
+        const updateRes = await pool.query(
+            `UPDATE help_requests SET status = 'RESOLVED', resolved_at = CURRENT_TIMESTAMP WHERE id = $1 RETURNING caller_phone`,
+            [help_request_id]
+        );
+        
+        if (updateRes.rowCount === 0) return res.status(404).json({ error: 'Request not found' });
+        const caller_phone = updateRes.rows[0].caller_phone;
+
+        // Log the definitive supervisor answer
+        await pool.query(
+            `INSERT INTO supervisor_responses (help_request_id, answer) VALUES ($1, $2)`,
+            [help_request_id, answer]
+        );
+
+        // Emit the critical Event Bus notification which triggers the KB Vector Indexer and SMS Worker
+        await kafkaProducer.send({
+            topic: 'supervisor_answered',
+            messages: [{
+                key: help_request_id,
+                value: JSON.stringify({ help_request_id, question, answer, caller_phone })
+            }]
+        });
+
+        res.json({ success: true });
+    } catch (error) {
+        console.error('[HelpRequestService] Error answering request:', error);
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
 const PORT = process.env.HELP_REQUEST_SERVICE_PORT || 3001;
 
 async function bootstrap() {
