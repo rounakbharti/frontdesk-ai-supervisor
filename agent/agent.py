@@ -1,10 +1,8 @@
 import os
-import json
 import logging
-import requests
+import requests as http_requests
 from dotenv import load_dotenv
-from livekit.agents import AutoSubscribe, JobContext, WorkerOptions, cli, llm
-from livekit.agents.pipeline import VoicePipelineAgent
+from livekit.agents import Agent, AgentSession, AutoSubscribe, JobContext, WorkerOptions, cli, llm
 from livekit.plugins import openai, silero
 
 # Load root .env from the monorepo configuration securely
@@ -22,29 +20,36 @@ If the customer asks a question you do NOT know the answer to, you MUST call the
 Do not guess answers. Empathize with the caller and state exactly: "Let me check with my supervisor and get back to you".
 """
 
-class AgentFnc(llm.FunctionContext):
-    @llm.ai_callable(desc="Escalates a question to the human supervisor when you do not know the answer.")
+
+class FrontdeskAgent(Agent):
+    def __init__(self):
+        super().__init__(
+            instructions=SYSTEM_PROMPT,
+        )
+
+    @llm.ai_callable(description="Escalates a question to the human supervisor when you do not know the answer.")
     async def escalate_to_supervisor(
         self,
-        caller_phone: str = llm.TypeInfo(desc="The phone number of the caller (make a fake one up if not known)"),
-        question: str = llm.TypeInfo(desc="The specific question you cannot answer")
+        caller_phone: str,
+        question: str,
     ):
+        """Escalate a question to a human supervisor. caller_phone is the caller's phone number (make one up if unknown). question is the specific question you cannot answer."""
         logger.info(f"Escalating: {question} for {caller_phone}")
         try:
-            # Phase 6 Core requirement: Check Knowledge Base first
-            kb_res = requests.post(KB_SEARCH_URL, json={"query": question}, timeout=3)
+            # Check Knowledge Base first
+            kb_res = http_requests.post(KB_SEARCH_URL, json={"query": question}, timeout=3)
             if kb_res.status_code == 200:
                 hits = kb_res.json().get("hits", [])
                 if hits:
                     return f"I actually just found the answer in my knowledge base: {hits[0]['answer']}"
-            
+
             # If genuinely unresolved, push to Help Request Service API
             payload = {
                 "caller_phone": caller_phone or "+15550000000",
                 "question": question,
                 "context": "Voice escalation."
             }
-            res = requests.post(HELP_REQUEST_URL, json=payload, timeout=3)
+            res = http_requests.post(HELP_REQUEST_URL, json=payload, timeout=3)
             if res.status_code == 201:
                 return "I have submitted the request to my supervisor. I will text you as soon as they reply!"
             else:
@@ -53,25 +58,26 @@ class AgentFnc(llm.FunctionContext):
             logger.error(f"Escalation completely failed: {e}")
             return "Sorry, my internal systems are down. I cannot escalate right now."
 
+
 async def entrypoint(ctx: JobContext):
     logger.info("Initializing Agent Session...")
-    
-    agent = VoicePipelineAgent(
+
+    await ctx.connect(auto_subscribe=AutoSubscribe.AUDIO_ONLY)
+
+    session = AgentSession(
         vad=silero.VAD.load(),
         stt=openai.STT(),
         llm=openai.LLM(),
         tts=openai.TTS(),
-        fnc_ctx=AgentFnc(),
-        chat_ctx=llm.ChatContext().append(
-            role="system",
-            text=SYSTEM_PROMPT
-        ),
     )
 
-    await ctx.connect(auto_subscribe=AutoSubscribe.AUDIO_ONLY)
-    
-    agent.start(ctx.room)
-    await agent.say("Welcome to Lumiere Salon! How can I help you today?", allow_interruptions=True)
+    await session.start(
+        room=ctx.room,
+        agent=FrontdeskAgent(),
+    )
+
+    await session.say("Welcome to Lumiere Salon! How can I help you today?", allow_interruptions=True)
+
 
 if __name__ == "__main__":
     cli.run_app(WorkerOptions(entrypoint_fnc=entrypoint))
