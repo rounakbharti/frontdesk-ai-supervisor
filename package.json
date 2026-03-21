@@ -1,0 +1,20 @@
+{
+  "name": "frontdesk-ai-supervisor",
+  "version": "1.0.0",
+  "private": true,
+  "workspaces": [
+    "services/*",
+    "workers/*",
+    "ui"
+  ],
+  "scripts": {
+    "build": "tsc -b",
+    "start:help-request": "node services/help-request/dist/index.js",
+    "dev:help-request": "ts-node services/help-request/src/index.ts"
+  },
+  "devDependencies": {
+    "typescript": "^5.2.2",
+    "ts-node": "^10.9.1",
+    "@types/node": "^20.8.2"
+  }
+}
