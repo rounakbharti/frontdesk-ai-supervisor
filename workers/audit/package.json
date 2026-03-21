@@ -1,0 +1,14 @@
+{
+  "name": "@frontdesk/audit-worker",
+  "version": "1.0.0",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc"
+  },
+  "dependencies": {
+    "dotenv": "^16.3.1",
+    "kafkajs": "^2.2.4",
+    "pg": "^8.11.3",
+    "uuid": "^9.0.1"
+  }
+}
