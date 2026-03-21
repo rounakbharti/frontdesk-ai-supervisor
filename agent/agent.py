@@ -2,7 +2,8 @@ import os
 import logging
 import requests as http_requests
 from dotenv import load_dotenv
-from livekit.agents import Agent, AgentSession, AutoSubscribe, JobContext, WorkerOptions, cli, llm
+from livekit.agents import Agent, AgentSession, AutoSubscribe, JobContext, WorkerOptions, cli
+from livekit.agents.llm import function_tool
 from livekit.plugins import openai, silero
 
 # Load root .env from the monorepo configuration securely
@@ -27,13 +28,18 @@ class FrontdeskAgent(Agent):
             instructions=SYSTEM_PROMPT,
         )
 
-    @llm.ai_callable(description="Escalates a question to the human supervisor when you do not know the answer.")
+    @function_tool()
     async def escalate_to_supervisor(
         self,
         caller_phone: str,
         question: str,
     ):
-        """Escalate a question to a human supervisor. caller_phone is the caller's phone number (make one up if unknown). question is the specific question you cannot answer."""
+        """Escalates a question to the human supervisor when you do not know the answer.
+        
+        Args:
+            caller_phone: The phone number of the caller (make a fake one up if not known)
+            question: The specific question you cannot answer
+        """
         logger.info(f"Escalating: {question} for {caller_phone}")
         try:
             # Check Knowledge Base first
