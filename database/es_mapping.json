@@ -1,0 +1,23 @@
+{
+  "mappings": {
+    "properties": {
+      "question": {
+        "type": "text",
+        "analyzer": "english"
+      },
+      "answer": {
+        "type": "text",
+        "analyzer": "english"
+      },
+      "question_embedding": {
+        "type": "dense_vector",
+        "dims": 1536,
+        "index": true,
+        "similarity": "cosine"
+      },
+      "created_at": {
+        "type": "date"
+      }
+    }
+  }
+}
