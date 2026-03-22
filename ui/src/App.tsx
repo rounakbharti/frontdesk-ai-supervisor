@@ -6,6 +6,7 @@ type HelpRequest = {
   question: string;
   status: 'PENDING' | 'RESOLVED' | 'UNRESOLVED';
   created_at: string;
+  answer?: string;
 };
 
 export default function App() {
@@ -92,7 +93,12 @@ export default function App() {
                   <strong style={{ fontSize: '0.9rem' }}>Caller {req.caller_phone}</strong>
                   <span className={`status-badge bg-${req.status.toLowerCase()}`}>{req.status}</span>
                 </div>
-                <p style={{ margin: 0, fontSize: '0.9rem' }}>"{req.question}"</p>
+                <p style={{ margin: 0, fontSize: '0.9rem', paddingBottom: '0.5rem' }}><strong>Q:</strong> "{req.question}"</p>
+                {req.answer && (
+                  <div style={{ padding: '0.5rem', background: 'rgba(59, 130, 246, 0.1)', borderRadius: '4px', borderLeft: '3px solid #3b82f6' }}>
+                    <p style={{ margin: 0, fontSize: '0.9rem', color: '#60a5fa' }}><strong>Learned Answer:</strong> {req.answer}</p>
+                  </div>
+                )}
               </div>
             ))}
           </div>

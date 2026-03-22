@@ -58,7 +58,12 @@ app.post('/api/requests', async (req, res) => {
 
 app.get('/api/requests', async (req, res) => {
     try {
-        const result = await pool.query('SELECT * FROM help_requests ORDER BY created_at DESC');
+        const result = await pool.query(
+            `SELECT h.*, s.answer 
+             FROM help_requests h 
+             LEFT JOIN supervisor_responses s ON h.id = s.help_request_id
+             ORDER BY h.created_at DESC`
+        );
         res.json(result.rows);
     } catch (error) {
         res.status(500).json({ error: 'Internal Server Error' });
