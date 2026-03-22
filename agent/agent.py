@@ -27,6 +27,7 @@ class FrontdeskAgent(Agent):
         super().__init__(
             instructions=SYSTEM_PROMPT,
         )
+        self.escalated_questions = set()
 
     @function_tool()
     async def escalate_to_supervisor(
@@ -40,6 +41,11 @@ class FrontdeskAgent(Agent):
             caller_phone: The phone number of the caller (make a fake one up if not known)
             question: The specific question you cannot answer
         """
+        normalized_q = question.lower().strip()
+        if normalized_q in self.escalated_questions:
+            return "I have already escalated this exact question to my supervisor. I am just waiting for their reply."
+            
+        self.escalated_questions.add(normalized_q)
         logger.info(f"Escalating: {question} for {caller_phone}")
         
         # Phase 6 Core requirement: Check Knowledge Base first (graceful fallback)
