@@ -1,11 +1,12 @@
 import express from 'express';
 import dotenv from 'dotenv';
+import path from 'path';
 import { pool } from './db';
 import { redisClient } from './redis';
 import { kafkaProducer } from './kafka';
 
 // Load variables from monorepo root
-dotenv.config({ path: '../../.env' });
+dotenv.config({ path: path.resolve(__dirname, '../../.env') });
 
 const app = express();
 app.use(express.json());

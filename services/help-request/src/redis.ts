@@ -1,6 +1,7 @@
 import { createClient } from 'redis';
 import dotenv from 'dotenv';
-dotenv.config({ path: '../../.env' });
+import path from 'path';
+dotenv.config({ path: path.resolve(__dirname, '../../.env') });
 
 const redisHost = process.env.REDIS_HOST || 'localhost';
 const redisPort = process.env.REDIS_PORT || '6379';

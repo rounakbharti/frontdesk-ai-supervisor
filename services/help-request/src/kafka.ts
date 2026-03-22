@@ -1,6 +1,7 @@
 import { Kafka } from 'kafkajs';
 import dotenv from 'dotenv';
-dotenv.config({ path: '../../.env' });
+import path from 'path';
+dotenv.config({ path: path.resolve(__dirname, '../../.env') });
 
 const kafka = new Kafka({
     clientId: 'help-request-service',

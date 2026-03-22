@@ -4,7 +4,7 @@ import requests as http_requests
 from dotenv import load_dotenv
 from livekit.agents import Agent, AgentSession, AutoSubscribe, JobContext, WorkerOptions, cli
 from livekit.agents.llm import function_tool
-from livekit.plugins import openai, silero
+from livekit.plugins import openai, deepgram, silero
 
 # Load root .env from the monorepo configuration securely
 load_dotenv(dotenv_path="../.env")
@@ -41,15 +41,19 @@ class FrontdeskAgent(Agent):
             question: The specific question you cannot answer
         """
         logger.info(f"Escalating: {question} for {caller_phone}")
+        
+        # Phase 6 Core requirement: Check Knowledge Base first (graceful fallback)
         try:
-            # Check Knowledge Base first
             kb_res = http_requests.post(KB_SEARCH_URL, json={"query": question}, timeout=3)
             if kb_res.status_code == 200:
                 hits = kb_res.json().get("hits", [])
                 if hits:
                     return f"I actually just found the answer in my knowledge base: {hits[0]['answer']}"
+        except Exception as kb_err:
+            logger.warning(f"KB lookup failed (non-critical): {kb_err}")
 
-            # If genuinely unresolved, push to Help Request Service API
+        # If genuinely unresolved, push to Help Request Service API
+        try:
             payload = {
                 "caller_phone": caller_phone or "+15550000000",
                 "question": question,
@@ -61,7 +65,7 @@ class FrontdeskAgent(Agent):
             else:
                 return "I had trouble contacting my supervisor, please try again later."
         except Exception as e:
-            logger.error(f"Escalation completely failed: {e}")
+            logger.error(f"Escalation to help-request failed: {e}")
             return "Sorry, my internal systems are down. I cannot escalate right now."
 
 
@@ -72,9 +76,13 @@ async def entrypoint(ctx: JobContext):
 
     session = AgentSession(
         vad=silero.VAD.load(),
-        stt=openai.STT(),
-        llm=openai.LLM(),
-        tts=openai.TTS(),
+        stt=deepgram.STT(),
+        llm=openai.LLM(
+            api_key=os.environ.get("GROQ_API_KEY"),
+            base_url="https://api.groq.com/openai/v1",
+            model="llama-3.3-70b-versatile"
+        ),
+        tts=deepgram.TTS(),
     )
 
     await session.start(

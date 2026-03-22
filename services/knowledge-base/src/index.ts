@@ -1,8 +1,9 @@
 import express from 'express';
 import dotenv from 'dotenv';
+import path from 'path';
 import { Client } from '@elastic/elasticsearch';
 
-dotenv.config({ path: '../../.env' });
+dotenv.config({ path: path.resolve(__dirname, '../../.env') });
 
 const app = express();
 app.use(express.json());
