@@ -1,8 +1,9 @@
 import { Kafka } from 'kafkajs';
 import { Client } from '@elastic/elasticsearch';
 import dotenv from 'dotenv';
+import path from 'path';
 
-dotenv.config({ path: '../../.env' });
+dotenv.config({ path: path.resolve(__dirname, '../../../.env') });
 
 const esClient = new Client({
     node: process.env.ELASTICSEARCH_NODE || 'http://localhost:9200'

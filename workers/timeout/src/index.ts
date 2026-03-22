@@ -2,8 +2,9 @@ import { Pool } from 'pg';
 import cron from 'node-cron';
 import { Kafka } from 'kafkajs';
 import dotenv from 'dotenv';
+import path from 'path';
 
-dotenv.config({ path: '../../.env' });
+dotenv.config({ path: path.resolve(__dirname, '../../../.env') });
 
 const pool = new Pool({
     user: process.env.POSTGRES_USER || 'admin',

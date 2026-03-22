@@ -12,11 +12,16 @@
     "start:help-request": "node services/help-request/dist/index.js",
     "start:knowledge-base": "node services/knowledge-base/dist/index.js",
     "start:notification": "node services/notification/dist/index.js",
+    "start:worker-audit": "node workers/audit/dist/index.js",
+    "start:worker-kb": "node workers/kb-indexer/dist/index.js",
+    "start:worker-timeout": "node workers/timeout/dist/index.js",
+    "start:all": "concurrently \"npm run start:help-request\" \"npm run start:knowledge-base\" \"npm run start:notification\" \"npm run start:worker-audit\" \"npm run start:worker-kb\" \"npm run start:worker-timeout\"",
     "dev:help-request": "ts-node services/help-request/src/index.ts"
   },
   "devDependencies": {
-    "typescript": "^5.2.2",
+    "@types/node": "^20.8.2",
+    "concurrently": "^9.2.1",
     "ts-node": "^10.9.1",
-    "@types/node": "^20.8.2"
+    "typescript": "^5.2.2"
   }
 }

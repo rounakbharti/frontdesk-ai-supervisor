@@ -1,6 +1,7 @@
 import os
 import logging
 import requests as http_requests
+import aiohttp
 from dotenv import load_dotenv
 from livekit.agents import Agent, AgentSession, AutoSubscribe, JobContext, WorkerOptions, cli
 from livekit.agents.llm import function_tool
@@ -44,11 +45,13 @@ class FrontdeskAgent(Agent):
         
         # Phase 6 Core requirement: Check Knowledge Base first (graceful fallback)
         try:
-            kb_res = http_requests.post(KB_SEARCH_URL, json={"query": question}, timeout=3)
-            if kb_res.status_code == 200:
-                hits = kb_res.json().get("hits", [])
-                if hits:
-                    return f"I actually just found the answer in my knowledge base: {hits[0]['answer']}"
+            async with aiohttp.ClientSession() as session:
+                async with session.post(KB_SEARCH_URL, json={"query": question}, timeout=3) as kb_res:
+                    if kb_res.status == 200:
+                        data = await kb_res.json()
+                        hits = data.get("hits", [])
+                        if hits:
+                            return f"I actually just found the answer in my knowledge base: {hits[0]['answer']}"
         except Exception as kb_err:
             logger.warning(f"KB lookup failed (non-critical): {kb_err}")
 
@@ -59,11 +62,12 @@ class FrontdeskAgent(Agent):
                 "question": question,
                 "context": "Voice escalation."
             }
-            res = http_requests.post(HELP_REQUEST_URL, json=payload, timeout=3)
-            if res.status_code == 201:
-                return "I have submitted the request to my supervisor. I will text you as soon as they reply!"
-            else:
-                return "I had trouble contacting my supervisor, please try again later."
+            async with aiohttp.ClientSession() as session:
+                async with session.post(HELP_REQUEST_URL, json=payload, timeout=3) as res:
+                    if res.status == 201:
+                        return "I have submitted the request to my supervisor. I will text you as soon as they reply!"
+                    else:
+                        return "I had trouble contacting my supervisor, please try again later."
         except Exception as e:
             logger.error(f"Escalation to help-request failed: {e}")
             return "Sorry, my internal systems are down. I cannot escalate right now."
