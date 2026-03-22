@@ -23,7 +23,10 @@ app.post('/api/search', async (req, res) => {
             index: 'knowledge_base',
             query: {
                 match: {
-                    question: query
+                    question: {
+                        query: query,
+                        minimum_should_match: "70%"
+                    }
                 }
             }
         });
