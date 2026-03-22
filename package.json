@@ -8,8 +8,10 @@
     "ui"
   ],
   "scripts": {
-    "build": "tsc -b",
+    "build": "npm run build --workspaces --if-present",
     "start:help-request": "node services/help-request/dist/index.js",
+    "start:knowledge-base": "node services/knowledge-base/dist/index.js",
+    "start:notification": "node services/notification/dist/index.js",
     "dev:help-request": "ts-node services/help-request/src/index.ts"
   },
   "devDependencies": {

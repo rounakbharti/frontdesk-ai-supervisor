@@ -2,7 +2,7 @@ import { Kafka } from 'kafkajs';
 import dotenv from 'dotenv';
 import path from 'path';
 
-dotenv.config({ path: path.resolve(__dirname, '../../.env') });
+dotenv.config({ path: path.resolve(__dirname, '../../../.env') });
 
 const kafka = new Kafka({
     clientId: 'notification-service',
